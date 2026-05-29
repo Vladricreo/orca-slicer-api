@@ -94,7 +94,7 @@ npm run dev
 `DATA_PATH` (required): Base directory for user uploaded profiles.\
 `NODE_ENV` (required): Sets if run in development or production.\
 `PORT` (optional): Port to run the server on, defaults to 3000.\
-`ASYNC_SLICE_RETENTION_MS` (optional): Time in milliseconds to retain asynchronous slice jobs, defaults to 3600000 (60 minutes). Cleanup runs every 60 minutes.
+`ASYNC_SLICE_RETENTION_MS` (optional): Time in milliseconds to retain asynchronous slice jobs, defaults to 3600000 (60 minutes). Cleanup runs every 5 minutes (and once at startup).
 
 Profiles are stored under:
 
@@ -102,7 +102,8 @@ Profiles are stored under:
 <DATA_PATH>/
 ├── printers/
 ├── presets/
-└── filaments/
+├── filaments/
+└── jobs/        # async slice jobs (state + results), persisted across restarts
 ```
 
 Each profile is a JSON file from OrcaSlicer.
@@ -116,7 +117,7 @@ Each profile is a JSON file from OrcaSlicer.
 The API supports asynchronous slicing via the `/slice-async` endpoint to handle bigger models that take longer to slice, without running into HTTP timeouts.
 When you submit a slicing job to this endpoint, it will return a unique `requestId` that you can use to check the status of the job and retrieve the results once it's completed. All jobs will run in the background in parallel, so there is no real queue system.
 
-Please also note that the jobs are only stored in memory and should be deleted after retrieval. If not deleted, they will be automatically removed after the time specified in `ASYNC_SLICE_RETENTION_MS` (default is 60 minutes).
+Jobs (their state and results) are persisted on disk under `<DATA_PATH>/jobs/<requestId>/`, so they survive container restarts and redeploys as long as `DATA_PATH` is a persistent volume. Jobs should be deleted after retrieval. If not deleted, they will be automatically removed after the time specified in `ASYNC_SLICE_RETENTION_MS` (default is 60 minutes). A job that was still being processed when the server restarted cannot be resumed and is marked as `failed` on the next startup (instead of being lost).
 
 This feature is still experimental and might change in future releases, feedback is welcome!
 
