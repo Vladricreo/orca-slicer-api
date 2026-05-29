@@ -23,7 +23,7 @@ jobs:
           LATEST_RELEASE=$(curl -s -L \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/SoftFever/OrcaSlicer/releases" | \
+            "https://api.github.com/repos/OrcaSlicer/OrcaSlicer/releases" | \
             jq -r '.[] | select(.prerelease == false) | .tag_name' | \
             head -n 1)
           
@@ -38,7 +38,7 @@ jobs:
           RELEASE_DATA=$(curl -s -L \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/repos/SoftFever/OrcaSlicer/releases/tags/$LATEST_RELEASE")
+            "https://api.github.com/repos/OrcaSlicer/OrcaSlicer/releases/tags/$LATEST_RELEASE")
           
           RELEASE_NAME=$(echo "$RELEASE_DATA" | jq -r '.name')
           RELEASE_URL=$(echo "$RELEASE_DATA" | jq -r '.html_url')

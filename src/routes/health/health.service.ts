@@ -39,7 +39,7 @@ export async function checkHealth(): Promise<HealthCheck> {
         timeout: 5000,
       });
 
-      // Extract version from output like "OrcaSlicer-2.3.1:" or "OrcaSlicer-01.10.01.50:"
+      // Extract version from output like "OrcaSlicer-2.3.2:" or "OrcaSlicer-01.10.01.50:"
       const versionMatch = helpOutput.match(/OrcaSlicer-([\d.]+)/);
       const version = versionMatch ? versionMatch[1] : "unknown";
       

@@ -2,7 +2,7 @@
 
 A RESTful service that leverages the OrcaSlicer CLI to slice 3D models (STL, STEP, 3MF).
 
-This project only provides an REST API to the OrcaSlicer CLI, full credit to the [OrcaSlicer](https://github.com/SoftFever/OrcaSlicer) contributors for the slicer itself.
+This project only provides an REST API to the OrcaSlicer CLI, full credit to the [OrcaSlicer](https://github.com/OrcaSlicer/OrcaSlicer) contributors for the slicer itself.
 
 ## Features
 
@@ -30,19 +30,19 @@ Prebuilt multi-arch images are published to GitHub Container Registry at `ghcr.i
 Pull and run the latest image for a supported OrcaSlicer version:
 
 ```bash
-docker pull ghcr.io/afkfelix/orca-slicer-api:latest-orca2.3.0
+docker pull ghcr.io/afkfelix/orca-slicer-api:latest-orca2.3.2
 mkdir ./data
 docker run -d \
   --name orca-slicer-api \
   -p 3000:3000 \
   -v "./data:/app/data" \
-  ghcr.io/afkfelix/orca-slicer-api:latest-orca2.3.0
+  ghcr.io/afkfelix/orca-slicer-api:latest-orca2.3.2
 ```
 
 Release images are also published with tags in the format `v<api-version>-orca<orca-version>`, for example:
 
 ```bash
-docker pull ghcr.io/afkfelix/orca-slicer-api:v0.3.0-orca2.3.0
+docker pull ghcr.io/afkfelix/orca-slicer-api:v0.3.0-orca2.3.2
 ```
 
 If you want to build the image locally instead use:
@@ -50,7 +50,7 @@ If you want to build the image locally instead use:
 ```bash
 git clone https://github.com/AFKFelix/orca-slicer-api.git
 cd orca-slicer-api
-docker build --build-arg ORCA_VERSION=2.3.0 -t orca-slicer-api .
+docker build --build-arg ORCA_VERSION=2.3.2 -t orca-slicer-api .
 docker run -d -p 3000:3000 --name orca-slicer-api orca-slicer-api
 ```
 

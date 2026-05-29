@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-ARG ORCA_VERSION=2.3.1
+ARG ORCA_VERSION=2.3.2
 WORKDIR /app
 
 RUN apt-get update \
@@ -20,8 +20,8 @@ RUN apt-get update \
 	&& update-ca-certificates \
 	&& rm -rf /var/lib/apt/lists/*
 
-RUN echo "Downloading AMD64 AppImage from SoftFever/OrcaSlicer..."; \
-	curl -o orca.AppImage -L "https://github.com/SoftFever/OrcaSlicer/releases/download/v${ORCA_VERSION}/OrcaSlicer_Linux_AppImage_Ubuntu2404_V${ORCA_VERSION}.AppImage"; \
+RUN echo "Downloading AMD64 AppImage from OrcaSlicer/OrcaSlicer..."; \
+	curl -o orca.AppImage -L "https://github.com/OrcaSlicer/OrcaSlicer/releases/download/v${ORCA_VERSION}/OrcaSlicer_Linux_AppImage_Ubuntu2404_V${ORCA_VERSION}.AppImage"; \
 	chmod +x orca.AppImage; \
 	./orca.AppImage --appimage-extract; \
 	rm orca.AppImage; 
