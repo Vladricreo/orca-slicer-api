@@ -54,6 +54,11 @@
                     "format": "binary",
                     "description": "Filament profile JSON file, prioritized over filament field, will not be saved to disk (optional, default: profile from 3mf or uploaded profile set in filament field)"
                   },
+                  "filamentProfiles": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" },
+                    "description": "Experimental (multi-nozzle/multi-extruder, e.g. Bambu H2D): one filament profile JSON file per extruder/nozzle. Attach multiple files under this same field. Takes precedence over filamentProfile/filament. Not saved to disk."
+                  },
                   "printer": {
                     "type": "string",
                     "description": "Printer profile name, must match uploaded profile (optional for 3mf, default: profile from 3mf)"
@@ -65,6 +70,22 @@
                   "filament": {
                     "type": "string",
                     "description": "Filament profile name, must match uploaded profile (optional for 3mf, default: profile from 3mf)"
+                  },
+                  "filaments": {
+                    "type": "string",
+                    "description": "Experimental (multi-nozzle/multi-extruder): comma-separated or JSON array of stored filament profile names, one per extruder/nozzle (e.g. \"pla,petg\" or [\"pla\",\"petg\"]). Takes precedence over filament."
+                  },
+                  "filamentMap": {
+                    "type": "string",
+                    "description": "Experimental (multi-nozzle): per-filament nozzle assignment, one value per filament (1 = primary nozzle, 2 = secondary nozzle). Comma-separated or JSON array (e.g. \"1,2\"). Maps to OrcaSlicer's filament_map."
+                  },
+                  "filamentMapMode": {
+                    "type": "string",
+                    "description": "Experimental (multi-nozzle): filament grouping mode. Maps to OrcaSlicer's filament_map_mode (e.g. \"Manual\" for custom assignment, \"Auto For Flush\", \"Auto For Quality\")."
+                  },
+                  "filamentIds": {
+                    "type": "string",
+                    "description": "Experimental (multi-nozzle): filament ids passed to OrcaSlicer via --load-filament-ids. Comma-separated or JSON array (e.g. \"1,1,2\")."
                   },
                   "bedType": {
                     "type": "string",
@@ -194,6 +215,11 @@
                     "format": "binary",
                     "description": "Filament profile JSON file, prioritized over filament field, will not be saved to disk (optional, default: profile from 3mf or uploaded profile set in filament field)"
                   },
+                  "filamentProfiles": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" },
+                    "description": "Experimental (multi-nozzle/multi-extruder, e.g. Bambu H2D): one filament profile JSON file per extruder/nozzle. Attach multiple files under this same field. Takes precedence over filamentProfile/filament. Not saved to disk."
+                  },
                   "printer": {
                     "type": "string",
                     "description": "Printer profile name, must match uploaded profile (optional for 3mf, default: profile from 3mf)"
@@ -205,6 +231,22 @@
                   "filament": {
                     "type": "string",
                     "description": "Filament profile name, must match uploaded profile (optional for 3mf, default: profile from 3mf)"
+                  },
+                  "filaments": {
+                    "type": "string",
+                    "description": "Experimental (multi-nozzle/multi-extruder): comma-separated or JSON array of stored filament profile names, one per extruder/nozzle (e.g. \"pla,petg\" or [\"pla\",\"petg\"]). Takes precedence over filament."
+                  },
+                  "filamentMap": {
+                    "type": "string",
+                    "description": "Experimental (multi-nozzle): per-filament nozzle assignment, one value per filament (1 = primary nozzle, 2 = secondary nozzle). Comma-separated or JSON array (e.g. \"1,2\"). Maps to OrcaSlicer's filament_map."
+                  },
+                  "filamentMapMode": {
+                    "type": "string",
+                    "description": "Experimental (multi-nozzle): filament grouping mode. Maps to OrcaSlicer's filament_map_mode (e.g. \"Manual\" for custom assignment, \"Auto For Flush\", \"Auto For Quality\")."
+                  },
+                  "filamentIds": {
+                    "type": "string",
+                    "description": "Experimental (multi-nozzle): filament ids passed to OrcaSlicer via --load-filament-ids. Comma-separated or JSON array (e.g. \"1,1,2\")."
                   },
                   "bedType": {
                     "type": "string",

@@ -55,6 +55,8 @@ export const uploadFullPrint = multer({
       "printerProfile",
       "presetProfile",
       "filamentProfile",
+      // Più profili filamento per lo slicing multi-estrusore/multi-nozzle.
+      "filamentProfiles",
     ];
 
     const ext = path.extname(file.originalname).toLowerCase();

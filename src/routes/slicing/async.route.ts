@@ -144,6 +144,8 @@ router.post(
     { name: "printerProfile", maxCount: 1 },
     { name: "presetProfile", maxCount: 1 },
     { name: "filamentProfile", maxCount: 1 },
+    // Più profili filamento (uno per estrusore/nozzle) per il multi-nozzle.
+    { name: "filamentProfiles", maxCount: 16 },
   ]),
   async (req, res) => {
     if (!req.files || Array.isArray(req.files)) {
@@ -171,10 +173,12 @@ router.post(
 
     const modelFile = files["file"][0];
     const settings = req.body as SlicingSettings;
+    const filamentBuffers = files["filamentProfiles"]?.map((f) => f.buffer);
     const tempProfiles = {
       printer: files["printerProfile"]?.[0]?.buffer,
       preset: files["presetProfile"]?.[0]?.buffer,
       filament: files["filamentProfile"]?.[0]?.buffer,
+      filaments: filamentBuffers,
     } as UploadedProfiles;
 
     void processSliceJob(requestId, modelFile, settings, tempProfiles);

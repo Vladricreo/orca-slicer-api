@@ -121,12 +121,27 @@ Jobs (their state and results) are persisted on disk under `<DATA_PATH>/jobs/<re
 
 This feature is still experimental and might change in future releases, feedback is welcome!
 
+## Multi-nozzle / multi-extruder slicing (experimental)
+
+Newer OrcaSlicer / Bambu Studio builds support multi-nozzle printers (e.g. the Bambu Lab H2D), where you assign each filament to a specific nozzle and pick a filament grouping mode. The API exposes this on both `/slice` and `/slice-async`:
+
+- `filamentProfiles` (file field): attach one filament profile JSON **per extruder/nozzle** under this same field. Takes precedence over `filamentProfile`/`filament`.
+- `filaments` (text field): comma-separated list or JSON array of **stored** filament profile names, one per extruder/nozzle (e.g. `pla,petg`). Takes precedence over `filament`.
+- `filamentMap` (text field): per-filament nozzle assignment, one value per filament (`1` = primary nozzle, `2` = secondary nozzle), e.g. `1,2`. Maps to OrcaSlicer's `filament_map`.
+- `filamentMapMode` (text field): filament grouping mode, maps to OrcaSlicer's `filament_map_mode` (e.g. `Manual` for the custom assignment mode, `Auto For Flush`, `Auto For Quality`).
+- `filamentIds` (text field): filament ids passed to OrcaSlicer via `--load-filament-ids`, e.g. `1,1,2`.
+
+`filamentMap` / `filamentMapMode` are injected into the loaded process profile before slicing (they are not initialised by the OrcaSlicer CLI on its own).
+
+> **WARNING:** Multi-extruder/dual-nozzle slicing via the OrcaSlicer CLI is currently unstable upstream and may crash (segfaults / validation errors) on H2D and dual-variant profiles, even on nightly builds. See OrcaSlicer issues [#12996](https://github.com/OrcaSlicer/OrcaSlicer/issues/12996), [#13405](https://github.com/OrcaSlicer/OrcaSlicer/issues/13405) and [#13518](https://github.com/OrcaSlicer/OrcaSlicer/issues/13518). This API surface is provided so it is ready once the CLI stabilises; expect failures until then.
+
 ## Roadmap
 
 There are still several improvements planned:
 
 - ~~Multi-plate slicing support~~ (added for 3MF files, returns ZIP of G-codes)
 - ~~Enhanced slicing options~~
+- Multi-nozzle / multi-extruder slicing (experimental, blocked on upstream CLI stability)
 - ~~Improved error handling~~
 - Better profile management system
 - Strengthened security measures

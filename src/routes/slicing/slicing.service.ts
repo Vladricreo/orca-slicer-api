@@ -61,21 +61,86 @@ export async function sliceModel(
     args.push("--orient", settings.orient ? "1" : "0");
   }
 
+  // I campi multi-nozzle arrivano come stringhe (multipart/form-data): li
+  // normalizziamo in array/numeri prima di costruire gli argomenti CLI.
+  const filamentMap = parseNumberArray(
+    (settings as Record<string, unknown>).filamentMap,
+  );
+  const filamentMapModeRaw = (settings as Record<string, unknown>)
+    .filamentMapMode;
+  const filamentMapMode =
+    typeof filamentMapModeRaw === "string" && filamentMapModeRaw.trim()
+      ? filamentMapModeRaw.trim()
+      : undefined;
+  const filamentIds = parseNumberArray(
+    (settings as Record<string, unknown>).filamentIds,
+  );
+  const filamentNames = parseStringArray(
+    (settings as Record<string, unknown>).filaments,
+  );
+
+  // Percorso del profilo processo (preset): potrebbe dover essere riscritto
+  // per iniettare filament_map / filament_map_mode.
+  let printerSettingsPath: string | undefined;
+  let processSettingsPath: string | undefined;
+
   if (tempProfiles?.printer && tempProfiles?.preset) {
-    const settingsArg = `${inputDir}/printer.json;${inputDir}/preset.json`;
-    args.push("--load-settings", settingsArg);
+    printerSettingsPath = `${inputDir}/printer.json`;
+    processSettingsPath = `${inputDir}/preset.json`;
   } else if (settings.printer && settings.preset) {
-    const settingsArg = `${basePath}/printers/${settings.printer}.json;${basePath}/presets/${settings.preset}.json`;
-    args.push("--load-settings", settingsArg);
+    printerSettingsPath = `${basePath}/printers/${settings.printer}.json`;
+    processSettingsPath = `${basePath}/presets/${settings.preset}.json`;
   }
 
-  if (tempProfiles?.filament) {
-    args.push("--load-filaments", `${inputDir}/filament.json`);
-  } else if (settings.filament) {
+  if (processSettingsPath && (filamentMap?.length || filamentMapMode)) {
+    try {
+      processSettingsPath = await injectFilamentMap(
+        processSettingsPath,
+        inputDir,
+        filamentMap,
+        filamentMapMode,
+      );
+    } catch (error) {
+      await fs.rm(workdir, { recursive: true, force: true }).catch(() => {});
+      throw new AppError(
+        500,
+        "Failed to apply filament map settings",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
+  if (printerSettingsPath && processSettingsPath) {
     args.push(
-      "--load-filaments",
-      `${basePath}/filaments/${settings.filament}.json`,
+      "--load-settings",
+      `${printerSettingsPath};${processSettingsPath}`,
     );
+  }
+
+  // Risoluzione dei filamenti: i profili multipli (multi-nozzle) hanno la
+  // precedenza sul singolo filamento, sia per gli upload al volo che per i
+  // profili salvati su disco.
+  const filamentPaths: string[] = [];
+  if (tempProfiles?.filaments && tempProfiles.filaments.length > 0) {
+    tempProfiles.filaments.forEach((_, index) => {
+      filamentPaths.push(`${inputDir}/filament-${index}.json`);
+    });
+  } else if (tempProfiles?.filament) {
+    filamentPaths.push(`${inputDir}/filament.json`);
+  } else if (filamentNames && filamentNames.length > 0) {
+    for (const name of filamentNames) {
+      filamentPaths.push(`${basePath}/filaments/${name}.json`);
+    }
+  } else if (settings.filament) {
+    filamentPaths.push(`${basePath}/filaments/${settings.filament}.json`);
+  }
+
+  if (filamentPaths.length > 0) {
+    args.push("--load-filaments", filamentPaths.join(";"));
+  }
+
+  if (filamentIds && filamentIds.length > 0) {
+    args.push("--load-filament-ids", filamentIds.join(","));
   }
 
   if (settings.bedType) {
@@ -301,7 +366,18 @@ async function writeTempProfiles(
     if (profiles.preset && profiles.preset.length > 0) {
       writes.push(fs.writeFile(presetPath, profiles.preset));
     }
-    if (profiles.filament && profiles.filament.length > 0) {
+
+    // Multi-nozzle: scrive un file per ogni filamento (filament-0.json, ...).
+    // Altrimenti, retrocompatibilità con il singolo filament.json.
+    if (profiles.filaments && profiles.filaments.length > 0) {
+      profiles.filaments.forEach((buffer, index) => {
+        if (buffer && buffer.length > 0) {
+          writes.push(
+            fs.writeFile(path.join(inputDir, `filament-${index}.json`), buffer),
+          );
+        }
+      });
+    } else if (profiles.filament && profiles.filament.length > 0) {
       writes.push(fs.writeFile(filamentPath, profiles.filament));
     }
 
@@ -313,4 +389,89 @@ async function writeTempProfiles(
       error instanceof Error ? error.message : String(error),
     );
   }
+}
+
+/**
+ * Inietta filament_map / filament_map_mode in una copia scrivibile del profilo
+ * di processo. In modalità CLI queste chiavi non vengono inizializzate da
+ * OrcaSlicer (le imposta normalmente la GUI), quindi le aggiungiamo al JSON
+ * caricato con --load-settings. I valori vettoriali sono salvati come array di
+ * stringhe, coerentemente con il formato dei profili OrcaSlicer.
+ * @returns Il percorso del profilo di processo da caricare.
+ */
+async function injectFilamentMap(
+  sourcePath: string,
+  inputDir: string,
+  filamentMap?: number[],
+  filamentMapMode?: string,
+): Promise<string> {
+  const content = await fs.readFile(sourcePath, "utf-8");
+  const json = JSON.parse(content) as Record<string, unknown>;
+
+  if (filamentMap && filamentMap.length > 0) {
+    json.filament_map = filamentMap.map((value) => value.toString());
+  }
+  if (filamentMapMode) {
+    json.filament_map_mode = filamentMapMode;
+  }
+
+  const outPath = path.join(inputDir, "process-merged.json");
+  await fs.writeFile(outPath, JSON.stringify(json));
+  return outPath;
+}
+
+/**
+ * Normalizza un valore proveniente da multipart/form-data in un array di
+ * stringhe. Accetta array, JSON (es. ["A","B"]) o liste separate da virgola.
+ */
+function parseStringArray(value: unknown): string[] | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    const arr = value.map((v) => String(v).trim()).filter(Boolean);
+    return arr.length > 0 ? arr : undefined;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          const arr = parsed.map((v) => String(v).trim()).filter(Boolean);
+          return arr.length > 0 ? arr : undefined;
+        }
+      } catch {
+        // Non è JSON valido: ricade sul parsing per virgole.
+      }
+    }
+
+    const arr = trimmed
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+    return arr.length > 0 ? arr : undefined;
+  }
+
+  return undefined;
+}
+
+/**
+ * Come parseStringArray, ma converte i valori in numeri scartando quelli non
+ * numerici.
+ */
+function parseNumberArray(value: unknown): number[] | undefined {
+  const arr = parseStringArray(value);
+  if (!arr) {
+    return undefined;
+  }
+
+  const numbers = arr.map(Number).filter((n) => !Number.isNaN(n));
+  return numbers.length > 0 ? numbers : undefined;
 }
