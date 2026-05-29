@@ -5,22 +5,27 @@ ARG TARGETARCH
 
 WORKDIR /app
 
-# Download OrcaSlicer based on architecture
-# AMD64: Use official AppImage from OrcaSlicer/OrcaSlicer
-# ARM64: Use custom-built AppImage from kldzj/orca-slicer-arm64
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
+# Download OrcaSlicer based on architecture and version
+# ORCA_VERSION=nightly: latest nightly build from OrcaSlicer/OrcaSlicer (AMD64 only)
+# AMD64 (stable): official AppImage from OrcaSlicer/OrcaSlicer
+# ARM64 (stable): custom-built AppImage from kldzj/orca-slicer-arm64
+RUN if [ "$ORCA_VERSION" = "nightly" ]; then \
+	if [ "$TARGETARCH" = "arm64" ]; then \
+	echo "ERROR: nightly builds are not available for arm64" >&2; \
+	exit 1; \
+	fi; \
+	echo "Downloading AMD64 nightly AppImage from OrcaSlicer/OrcaSlicer..."; \
+	curl -o orca.AppImage -L "https://github.com/OrcaSlicer/OrcaSlicer/releases/download/nightly-builds/OrcaSlicer_Linux_AppImage_Ubuntu2404_nightly.AppImage"; \
+	elif [ "$TARGETARCH" = "arm64" ]; then \
 	echo "Downloading ARM64 AppImage from kldzj/orca-slicer-arm64..."; \
 	curl -o orca.AppImage -L "https://github.com/kldzj/orca-slicer-arm64/releases/download/v${ORCA_VERSION}-arm64/OrcaSlicer-${ORCA_VERSION}-arm64-linux.AppImage"; \
-	chmod +x orca.AppImage; \
-	./orca.AppImage --appimage-extract; \
-	rm orca.AppImage; \
 	else \
 	echo "Downloading AMD64 AppImage from OrcaSlicer/OrcaSlicer..."; \
 	curl -o orca.AppImage -L "https://github.com/OrcaSlicer/OrcaSlicer/releases/download/v${ORCA_VERSION}/OrcaSlicer_Linux_AppImage_Ubuntu2404_V${ORCA_VERSION}.AppImage"; \
+	fi; \
 	chmod +x orca.AppImage; \
 	./orca.AppImage --appimage-extract; \
-	rm orca.AppImage; \
-	fi
+	rm orca.AppImage
 
 COPY package*.json ./
 
@@ -42,7 +47,7 @@ RUN apt-get update \
 	&& apt-get update \
 	&& apt-get install -y --no-install-recommends \
 	nodejs \
-	libgl1 libgl1-mesa-dri libegl1 \
+	libgl1 libgl1-mesa-dri libegl1 libopengl0 libglu1-mesa \
 	libgtk-3-0 \
 	libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
 	libwebkit2gtk-4.1-0 \

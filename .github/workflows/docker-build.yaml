@@ -19,12 +19,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        orca_version: ['2.3.0', '2.3.1', '2.3.2']
+        orca_version: ['2.3.0', '2.3.1', '2.3.2', 'nightly']
         platform:
           - runner: ubuntu-latest
             arch: amd64
           - runner: ubuntu-24.04-arm
             arch: arm64
+        # Nightly builds are only published for amd64
+        exclude:
+          - orca_version: 'nightly'
+            platform:
+              runner: ubuntu-24.04-arm
+              arch: arm64
     
     runs-on: ${{ matrix.platform.runner }}
     
@@ -141,7 +147,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        orca_version: ['2.3.0', '2.3.1', '2.3.2']
+        orca_version: ['2.3.0', '2.3.1', '2.3.2', 'nightly']
     
     steps:
       - name: Log in to GitHub Container Registry
@@ -156,6 +162,24 @@ jobs:
           IMAGE_NAME_LOWER=$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
           ORCA_VERSION="${{ matrix.orca_version }}"
           DATE=$(date +%Y%m%d)
+
+          # The OrcaSlicer nightly build is only published for amd64,
+          # so its manifest must reference a single architecture.
+          if [ "$ORCA_VERSION" = "nightly" ]; then
+            ARCHS="amd64"
+          else
+            ARCHS="amd64 arm64"
+          fi
+
+          # Builds the space separated list of per-arch image tags for a given base tag.
+          arch_sources() {
+            local base="$1"
+            local sources=""
+            for arch in $ARCHS; do
+              sources="$sources ${base}-${arch}"
+            done
+            echo "$sources"
+          }
           
           if [[ "${{ github.ref }}" =~ ^refs/tags/v.*$ ]]; then
             # Release build
@@ -164,18 +188,15 @@ jobs:
             LATEST_TAG="${IMAGE_NAME_LOWER}:latest-orca${ORCA_VERSION}"
             
             docker buildx imagetools create -t "$MANIFEST_TAG" -t "$LATEST_TAG" \
-              "${IMAGE_NAME_LOWER}:${RELEASE_TAG}-orca${ORCA_VERSION}-amd64" \
-              "${IMAGE_NAME_LOWER}:${RELEASE_TAG}-orca${ORCA_VERSION}-arm64"
+              $(arch_sources "${IMAGE_NAME_LOWER}:${RELEASE_TAG}-orca${ORCA_VERSION}")
           else
             # Nightly build
             MANIFEST_TAG="${IMAGE_NAME_LOWER}:nightly-orca${ORCA_VERSION}"
             DATED_TAG="${IMAGE_NAME_LOWER}:nightly-orca${ORCA_VERSION}-${DATE}"
             
             docker buildx imagetools create -t "$MANIFEST_TAG" \
-              "${IMAGE_NAME_LOWER}:nightly-orca${ORCA_VERSION}-amd64" \
-              "${IMAGE_NAME_LOWER}:nightly-orca${ORCA_VERSION}-arm64"
+              $(arch_sources "${IMAGE_NAME_LOWER}:nightly-orca${ORCA_VERSION}")
             
             docker buildx imagetools create -t "$DATED_TAG" \
-              "${IMAGE_NAME_LOWER}:nightly-orca${ORCA_VERSION}-${DATE}-amd64" \
-              "${IMAGE_NAME_LOWER}:nightly-orca${ORCA_VERSION}-${DATE}-arm64"
+              $(arch_sources "${IMAGE_NAME_LOWER}:nightly-orca${ORCA_VERSION}-${DATE}")
           fi

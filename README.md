@@ -54,6 +54,22 @@ docker build --build-arg ORCA_VERSION=2.3.2 -t orca-slicer-api .
 docker run -d -p 3000:3000 --name orca-slicer-api orca-slicer-api
 ```
 
+#### Nightly builds
+
+You can also build against the latest OrcaSlicer [nightly build](https://github.com/OrcaSlicer/OrcaSlicer/releases/tag/nightly-builds) by passing `ORCA_VERSION=nightly`:
+
+```bash
+docker build --build-arg ORCA_VERSION=nightly -t orca-slicer-api:nightly .
+```
+
+Prebuilt nightly images are published as well:
+
+```bash
+docker pull ghcr.io/afkfelix/orca-slicer-api:latest-orcanightly
+```
+
+> **NOTE:** Nightly builds are only available for `amd64` (the official OrcaSlicer nightly AppImage is not published for `arm64`). They track the OrcaSlicer `main` branch and may be unstable.
+
 ### Local (Development)
 
 ```bash

@@ -13,15 +13,20 @@ RUN apt-get update \
 	&& apt-get update \
 	&& apt-get install -y --no-install-recommends \
 	nodejs \
-	libgl1 libgl1-mesa-dri libegl1 \
+	libgl1 libgl1-mesa-dri libegl1 libopengl0 libglu1-mesa \
 	libgtk-3-0 \
 	libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
 	libwebkit2gtk-4.1-0 \
 	&& update-ca-certificates \
 	&& rm -rf /var/lib/apt/lists/*
 
-RUN echo "Downloading AMD64 AppImage from OrcaSlicer/OrcaSlicer..."; \
+RUN if [ "$ORCA_VERSION" = "nightly" ]; then \
+	echo "Downloading AMD64 nightly AppImage from OrcaSlicer/OrcaSlicer..."; \
+	curl -o orca.AppImage -L "https://github.com/OrcaSlicer/OrcaSlicer/releases/download/nightly-builds/OrcaSlicer_Linux_AppImage_Ubuntu2404_nightly.AppImage"; \
+	else \
+	echo "Downloading AMD64 AppImage from OrcaSlicer/OrcaSlicer..."; \
 	curl -o orca.AppImage -L "https://github.com/OrcaSlicer/OrcaSlicer/releases/download/v${ORCA_VERSION}/OrcaSlicer_Linux_AppImage_Ubuntu2404_V${ORCA_VERSION}.AppImage"; \
+	fi; \
 	chmod +x orca.AppImage; \
 	./orca.AppImage --appimage-extract; \
 	rm orca.AppImage; 
