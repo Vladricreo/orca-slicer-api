@@ -49,6 +49,9 @@ RUN apt-get update \
 	nodejs \
 	libgl1 libgl1-mesa-dri libegl1 libopengl0 libglu1-mesa \
 	libgtk-3-0 \
+	libsm6 libice6 libxext6 libxrender1 libxfixes3 libxxf86vm1 \
+	libxi6 libxtst6 libxrandr2 libxcursor1 libxinerama1 \
+	libxcomposite1 libxdamage1 \
 	libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 \
 	libwebkit2gtk-4.1-0 \
 	&& update-ca-certificates \
